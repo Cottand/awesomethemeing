@@ -162,7 +162,9 @@ local bat = lain.widget.bat({
         battooltip:set_markup(string.format("\n%s%%, %s", perc, bat_now.time))
     end
 })
-
+--client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
+--client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
+-- 
 -- MPD
 theme.mpd = lain.widget.mpd({
     music_dir = "/mnt/storage/Downloads/Music",

@@ -72,7 +72,7 @@ local themes = {
 
 local enable_titlebars = true
 
-local chosen_theme = themes[11]
+local chosen_theme = themes[10]
 
 local modkey       = "Mod4"
 local altkey       = "Mod1"
@@ -82,6 +82,8 @@ local gui_editor   = "gedit"
 local browser      = "chromium"
 local guieditor    = "code-git"
 local scrlocker    = "slock"
+local dropterm     = "xfce4-terminal --drop-down"
+local file_browser = "nautilus"
 
 beautiful.init(string.format("%s/.config/awesome/themes/%s/theme.lua", os.getenv("HOME"), chosen_theme))
 
@@ -272,6 +274,97 @@ root.buttons(gears.table.join(
 
 -- {{{ Key bindings
 globalkeys = gears.table.join(
+
+
+    -- Brightness
+    awful.key({ }, "XF86MonBrightnessUp", function () os.execute("xbacklight -inc 10") end,
+              {description = "+10%", group = "hotkeys"}),
+    awful.key({ }, "XF86MonBrightnessDown", function () os.execute("xbacklight -dec 10") end,
+              {description = "-10%", group = "hotkeys"}),
+
+    --Touchscreen toggling
+    awful.key({ modkey, }, "t", function () os.execute("xinput enable 13") end,
+              {description = "Enable touchscreen", group = "hotkeys"}),
+    awful.key({ modkey, "Shift" }, "t", function () os.execute("xinput disable 13") end,
+              {description = "Disable touchscreen", group = "hotkeys"}),
+
+
+
+    -- ALSA volume control
+    awful.key({ altkey }, "Up",
+        function ()
+            os.execute(string.format("amixer -q set %s 1%%+", beautiful.volume.channel))
+            beautiful.volume.update()
+        end,
+        {description = "volume up", group = "hotkeys"}),
+    awful.key({ altkey }, "Down",
+        function ()
+            os.execute(string.format("amixer -q set %s 1%%-", beautiful.volume.channel))
+            beautiful.volume.update()
+        end,
+        {description = "volume down", group = "hotkeys"}),
+    awful.key({ altkey }, "m",
+        function ()
+            os.execute(string.format("amixer -q set %s toggle", beautiful.volume.togglechannel or beautiful.volume.channel))
+            beautiful.volume.update()
+        end,
+        {description = "toggle mute", group = "hotkeys"}),
+    awful.key({ altkey, "Control" }, "m",
+        function ()
+            os.execute(string.format("amixer -q set %s 100%%", beautiful.volume.channel))
+            beautiful.volume.update()
+        end,
+        {description = "volume 100%", group = "hotkeys"}),
+    awful.key({ altkey, "Control" }, "0",
+        function ()
+            os.execute(string.format("amixer -q set %s 0%%", beautiful.volume.channel))
+            beautiful.volume.update()
+        end,
+        {description = "volume 0%", group = "hotkeys"}),
+
+    -- MPD control
+    awful.key({ altkey, "Control" }, "Up",
+        function ()
+            os.execute("mpc toggle")
+            beautiful.mpd.update()
+        end,
+        {description = "mpc toggle", group = "widgets"}),
+    awful.key({ altkey, "Control" }, "Down",
+        function ()
+            os.execute("mpc stop")
+            beautiful.mpd.update()
+        end,
+        {description = "mpc stop", group = "widgets"}),
+    awful.key({ altkey, "Control" }, "Left",
+        function ()
+            os.execute("mpc prev")
+            beautiful.mpd.update()
+        end,
+        {description = "mpc prev", group = "widgets"}),
+    awful.key({ altkey, "Control" }, "Right",
+        function ()
+            os.execute("mpc next")
+            beautiful.mpd.update()
+        end,
+        {description = "mpc next", group = "widgets"}),
+    awful.key({ altkey }, "0",
+        function ()
+            local common = { text = "MPD widget ", position = "top_middle", timeout = 2 }
+            if beautiful.mpd.timer.started then
+                beautiful.mpd.timer:stop()
+                common.text = common.text .. lain.util.markup.bold("OFF")
+            else
+                beautiful.mpd.timer:start()
+                common.text = common.text .. lain.util.markup.bold("ON")
+            end
+            naughty.notify(common)
+        end,
+        {description = "mpc on/off", group = "widgets"}),
+
+
+
+
+
     awful.key({ modkey,           }, "s",      hotkeys_popup.show_help,
               {description="show help", group="awesome"}),
     awful.key({ modkey,           }, "Left",   awful.tag.viewprev,
@@ -353,8 +446,16 @@ globalkeys = gears.table.join(
     -- Standard program
     awful.key({ modkey,           }, "Return", function () awful.spawn(terminal) end,
               {description = "open a terminal", group = "launcher"}),
-    awful.key({                   }, "F1", function () os.execute("xfce4-terminal --drop-down") end,
-              {description = "open a terminal", group = "launcher"}),
+    awful.key({                   }, "F1", function () awful.spawn(dropterm) end,
+              {description = "open a drop terminal", group = "launcher"}),
+    awful.key({modkey,            }, "q", function () awful.spawn(browser) end,
+              {description = "Launch chromium", group = "launcher"}),
+    awful.key({modkey,            }, "a", function () awful.spawn(guieditor) end,
+              {description = "Launch code-vs", group = "launcher"}),
+
+    awful.key({modkey,            }, "z", function () awful.spawn(file_browser) end,
+              {description = "Launch nautilus", group = "launcher"}),
+
 
     
     awful.key({ modkey, "Control" }, "r", awesome.restart,
@@ -515,6 +616,20 @@ root.keys(globalkeys)
 -- {{{ Rules
 -- Rules to apply to new clients (through the "manage" signal).
 awful.rules.rules = {
+    --IntelliJ fix:
+    { rule = {
+            class = "jetbrains-.*",
+        }, properties = { focus = true, buttons = clientbuttons_jetbrains }
+    },
+    { rule = {
+            class = "jetbrains-.*",
+            name = "win.*"
+        }, properties = { titlebars_enabled = false, focusable = false, focus = true, floating = true, placement = awful.placement.restore }
+    },
+
+
+
+
     -- All clients will match this rule.
     { rule = { },
       properties = { border_width = beautiful.border_width,
@@ -633,3 +748,15 @@ end)
 --client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
 --client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 -- }}}
+
+
+
+
+
+-- IntelliJ fix:
+
+clientbuttons_jetbrains = gears.table.join(
+    awful.button({ modkey }, 1, awful.mouse.client.move),
+    awful.button({ modkey }, 3, awful.mouse.client.resize)
+)
+
